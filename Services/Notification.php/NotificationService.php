@@ -64,6 +64,7 @@ class NotificationService
     private function sendClientEmailNotification(Seller $reseller, Contractor $client, array $templateData, array &$result): void
     {
         $emailFrom = Contractor::getResellerEmailFrom();
+        $client->email = htmlspecialchars($client->email, ENT_QUOTES, 'UTF-8');
         if (!empty($emailFrom) && !empty($client->email)) {
             MessagesClient::sendMessage([
                 0 => [

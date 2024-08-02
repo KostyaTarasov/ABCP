@@ -36,12 +36,45 @@ class Operation extends AbstractReferencesOperation
 
     private function validateData(array $data): void
     {
+        // Фильтрация и валидация данных
+        $data = filter_var_array($data, [
+            'resellerId'       => FILTER_VALIDATE_INT,
+            'notificationType' => FILTER_VALIDATE_INT,
+            'clientId'         => FILTER_VALIDATE_INT,
+            'creatorId'        => FILTER_VALIDATE_INT,
+            'expertId'         => FILTER_VALIDATE_INT,
+            'complaintId'      => FILTER_VALIDATE_INT,
+            'complaintNumber'  => FILTER_VALIDATE_INT,
+            'consumptionId'    => FILTER_VALIDATE_INT,
+            'consumptionNumber'=> FILTER_VALIDATE_INT,
+            'agreementNumber'  => FILTER_VALIDATE_INT,
+            'date'             => FILTER_SANITIZE_STRING,
+            'differences'      => [
+                'filter' => FILTER_CALLBACK,
+                'options' => function($value) {
+                    return is_array($value) ? array_map('intval', $value) : null;
+                }
+            ]
+        ]);
+
         if (empty($data['resellerId'])) {
-            throw new DbException('Empty resellerId', 400);
+            throw new \InvalidArgumentException('Invalid or empty resellerId', 400);
         }
 
         if (empty($data['notificationType'])) {
-            throw new DbException('Empty notificationType', 400);
+            throw new \InvalidArgumentException('Invalid or empty notificationType', 400);
+        }
+
+        if (empty($data['clientId'])) {
+            throw new \InvalidArgumentException('Invalid or empty clientId', 400);
+        }
+
+        if (empty($data['creatorId'])) {
+            throw new \InvalidArgumentException('Invalid or empty creatorId', 400);
+        }
+
+        if (empty($data['expertId'])) {
+            throw new \InvalidArgumentException('Invalid or empty expertId', 400);
         }
     }
 
@@ -59,7 +92,7 @@ class Operation extends AbstractReferencesOperation
     {
         $client = Contractor::getById($clientId);
         if (empty($client) || $client->type !== Contractor::TYPE_CUSTOMER || $client->id !== $resellerId) {
-            throw new \Exception('Client not found!', 400);
+            throw new DbException('Client not found!', 400);
         }
 
         return $client;
@@ -69,7 +102,7 @@ class Operation extends AbstractReferencesOperation
     {
         $employee = Employee::getById($employeeId);
         if (empty($employee)) {
-            throw new \Exception('Employee not found!', 400);
+            throw new DbException('Employee not found!', 400);
         }
 
         return $employee;
@@ -105,16 +138,16 @@ class Operation extends AbstractReferencesOperation
             'COMPLAINT_ID' => (int)$data['complaintId'],
             'COMPLAINT_NUMBER' => (int)$data['complaintNumber'],
             'CREATOR_ID' => $creator->id,
-            'CREATOR_NAME' => $creator->getFullName(),
+            'CREATOR_NAME' => htmlspecialchars((string)$creator->getFullName(), ENT_QUOTES, 'UTF-8'),
             'EXPERT_ID' => $expert->id,
-            'EXPERT_NAME' => $expert->getFullName(),
+            'EXPERT_NAME' =>  htmlspecialchars((string)$expert->getFullName(), ENT_QUOTES, 'UTF-8'),
             'CLIENT_ID' => $client->id,
-            'CLIENT_NAME' => $client->getFullName(),
+            'CLIENT_NAME' => htmlspecialchars((string)$client->getFullName(), ENT_QUOTES, 'UTF-8'),
             'CONSUMPTION_ID' => (int)$data['consumptionId'],
             'CONSUMPTION_NUMBER' => (int)$data['consumptionNumber'],
             'AGREEMENT_NUMBER' => (int)$data['agreementNumber'],
-            'DATE' => (string)$data['date'],
-            'DIFFERENCES' => $differences,
+            'DATE' => htmlspecialchars((string)$data['date'], ENT_QUOTES, 'UTF-8'),,
+            'DIFFERENCES' => htmlspecialchars($differences, ENT_QUOTES, 'UTF-8'),,
         ];
     }
 
@@ -122,7 +155,7 @@ class Operation extends AbstractReferencesOperation
     {
         foreach ($templateData as $key => $value) {
             if (empty($value)) {
-                throw new \Exception("Template Data ({$key}) is empty!", 500);
+                throw new \InvalidArgumentException("Template Data ({$key}) is empty!", 500);
             }
         }
     }
